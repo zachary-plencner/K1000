@@ -4,85 +4,49 @@ __metaclass__ = type
 
 DOCUMENTATION = r'''
 ---
-module: create_secret_server_secret
+module: modify_asset
 
-short_description: Create a secret in Delineas Secret Server
+short_description: Modify an Asset in Quest's K1000 CMDB
 
 version_added: "1.0.0"
 
 description: |
-    Create a secret in Delineas Secret Server using the Secret Servers API as a backend.
-    Returns a secret variable that contains the secrets username and password.
+    Modify an Asset in Quest's K1000 CMDB using the K1000's API as a backend.
+    Returns information about the targeted asset.
 
 options:
-    secret_server_host:
-        description: The hostname of your Secret Server instance
+    k1000_host:
+        description: The hostname of K1000 instance
         required: true
         type: str
-    secret_server_username_domain:
-        description: The domain pertaining to your username. This is prepend to your username
-        required: false
-        type: str
-    secret_server_username:
-        description: The username of the user that will be used to contact the Secret Server API
+    k1000_username:
+        description: The username of the user to connect to the K1000 API
         required: true
         type: str
-    secret_server_password:
-        description: The password of the user that will be used to contact the Secret Server API
+    k1000_password:
+        description: The password of the user to connect to the K1000 API
         required: true
         type: str
-    secret_folder:
-        description: The name of the folder the secret will be placed in
-        required: True
+    k1000_totp_secret:
+        description: The TOTP secret of the user to connect to the K1000 API
+        required: true
         type: str
-    secret_template:
-        description: The type of secret you want to create
-        required: True
+    k1000_org: The K1000 ORG to land in after login
+        description:
+        required: true
         type: str
-    secret_name:
-        description: The display name of the secret
-        required: True
+    machine_name: The name of the machine asset to modify
+        description:
+        required: true
         type: str
-    secret_items:
-        description: Additional parameters for the chosen secret template
-        required: False
-        type: dict
-    use_random_password:
-        description: When true will generate a random password with requirements for secret_items.Password
-        required: False
-        type: bool
-    random_password_alphabet:
-        description: String containing all allowed characters for random password generation
-        required: False
+    owner_name: The fullname of the owner to assign to the targeted asset
+        description:
+        required: true
         type: str
-    random_password_length:
-        description: Number of characters the random password will contains
-        required: False
-        type: int
-    random_password_uppercase_requirement:
-        description: Minimum number of uppercase characters the random password will contain
-        required: False
-        type: int
-    random_password_lowercase_requirement:
-        description: Minimum number of lowercase characters the random password will contain
-        required: False
-        type: int
-    random_password_digit_requirement:
-        description: Minimum number of digit characters the random password will contain
-        required: False
-        type: int
-    random_password_special_requirement:
-        description: Minimum number of special characters the random password will contain
-        required: False
-        type: int
-    sha512_encrypt_password:
-        description: Output for password parameter will be sha512 encrypted for security purposes
-        required: False
-        type: bool
-    secret_overwrite:
-        description: Flag to enable overwriting of an existing secret
-        required: False
-        type: bool
+    service_name:
+        description: The name of the service to assign to the targeted asset
+        required: true
+        type: str
 
 author:
     - Zachary Plencner (@zachary-plencner)
@@ -90,66 +54,22 @@ author:
 
 EXAMPLES = r'''
 # Create a 'Windows Account' Secret
-- name: Create a new secret
-    create_windows_secret_server_secret:
-      secret_server_host: 'https://contoso.secretservercloud.com'
-      secret_server_username_domain: "contoso"
-      secret_server_username: "john.doe"
-      secret_server_password: "password123"
-      secret_folder: "/My Secrets"
-      secret_name: "My Workstation"
-      secret_template: "Windows Account"
-      secret_items:
-        Machine: "DESKTOP-Q66XZA5"
-        Username: "jdoe"
-        Password: "password123"
-
-# Create a 'Password' Secret
-- name: Create Secret
-    create_windows_secret_server_secret:
-      secret_server_host: 'https://contoso.secretservercloud.com'
-      secret_server_username_domain: "contoso"
-      secret_server_username: "jane.doe"
-      secret_server_password: "password123"
-      secret_folder: "/My Secrets/Linux Secrets"
-      secret_name: "database-1 secret"
-      secret_template: "Password"
-      secret_items:
-        Username: "root"
-        Password: "Q1am9a!aSl"
-        Resource: "database-1"
-        Notes: "Root login for database-1"
-    sha512_encrypt_password: yes
-    secret_overwrite: True
-
-# Create a 'Active Directory Account" Secret with random password
-- name: Create Secret
-    create_windows_secret_server_secret:
-      secret_server_host: 'https://contoso.secretservercloud.com'
-      secret_server_username_domain: "contoso"
-      secret_server_username: "jane.doe"
-      secret_server_password: "password123"
-      secret_folder: "/My Secrets/Active Directory Secrets/jdoe1"
-      secret_name: "jdoe1 AD password"
-      secret_template: "Active Directory Account"
-      secret_items:
-        Username: "jdoe1"
-        Domain: "contoso"
-        Notes: "My AD Secret"
-    use_random_password: yes
-    random_password_length: 12
-    random_password_alphabet: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzy0123456789!@$%^&'
-    random_password_uppercase_requirement: 1
-    random_password_lowercase_requirement: 1
-    random_password_digit_requirement: 1
-    random_password_special_requirement: 1
-    secret_overwrite: True
+- name: K1000 API
+    zachary_plencner.k1000.modify_asset:
+      k1000_host: "https://k1000.contoso.com"
+      k1000_username: "k1000_admin"
+      k1000_password: "password123"
+      k1000_totp_secret: "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456"
+      k1000_org: "Workstations"
+      machine_name: "server1"
+      owner_name: "John Doe"
+      service_name: "General Servers"
 '''
 
 RETURN = r'''
-secret:
-    description: The items contained in the secret
-    type: str
+Machine:
+    description: Information about the machine asset
+    type: dict
     returned: always
     secret: {
         item1: "itemValue1",
@@ -351,7 +271,7 @@ def run_module():
         json_data = r.json()
         machine = json_data['Assets'][0]
 
-    result['Result'] = machine
+    result['Machine'] = machine
 
     # in the event of a successful module execution, you will want to
     # simple AnsibleModule.exit_json(), passing the key/value results
