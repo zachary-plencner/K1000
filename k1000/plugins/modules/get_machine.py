@@ -4,15 +4,14 @@ __metaclass__ = type
 
 DOCUMENTATION = r'''
 ---
-module: modify_asset
+module: get_machine
 
-short_description: Modify an Asset in Quest's K1000 CMDB
+short_description: Retreive information about a machine in Quest's K1000 CMDB
 
-version_added: "1.0.0"
+version_added: "2.0.0"
 
 description: |
-    Modify an Asset in Quest's K1000 CMDB using the K1000's API as a backend.
-    Returns information about the targeted asset.
+    Retreive information about a machine in Quest's K1000 CMDB using the K1000's API as a backend.
 
 options:
     k1000_host:
@@ -35,14 +34,10 @@ options:
         description: The K1000 ORG to land in after login
         required: true
         type: str
-    asset_id:
-        description: The id of the asset to modify
+    search_term:
+        description: Search string for machine name
         required: true
         type: str
-    asset_fields:
-        description: Free form dictionary of fields to change within the asset
-        required: true
-        type: dict
 
 author:
     - Zachary Plencner (@zachary-plencner)
@@ -50,32 +45,27 @@ author:
 
 EXAMPLES = r'''
 # Create a 'Windows Account' Secret
-- name: Update KACE Asset
-    zachary_plencner.k1000.modify_asset:
-      k1000_host: "https://k1000.contoso.org"
-      k1000_username: "John.Doe"
-      k1000_password: "password123"
-      k1000_totp_secret: "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456"
-      k1000_org: "Org1"
-      asset_id: "12345"
-      asset_fields:
-        owner_id: "123"
-        field_12345:
-          id: "1234"
-        Machine:
-          id: 1234
+- name: Get KACE machine(s) and register as variable
+    zachary_plencner.k1000.get_asset:
+        k1000_host: "https://k1000.contoso.org"
+        k1000_username: "John.Doe"
+        k1000_password: "password123"
+        k1000_totp_secret: "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456"
+        k1000_org: "Org1"
+        search_term: "My Machine 1"
+    register: k1000_machine
 '''
 
 RETURN = r'''
-assets:
-    description: Information about the asset
+machines:
+    description: Information about the machine
     type: dict
     returned: always
     [
-        {asset1},
-        {asset2},
-        {asset3},
-        {assetN}
+        {machine1},
+        {machine2},
+        {machine3},
+        {machineN}
     ]
 '''
 
@@ -174,20 +164,6 @@ def delete(k1000_server_logon, endpoint):
 
     return r.json()
 
-def compare_dicts(dict_a, dict_b):
-    for key, value_a in dict_a.items():
-        if key not in dict_b:
-            return False
-
-        value_b = dict_b[key]
-
-        if isinstance(value_a, dict) and isinstance(value_b, dict):
-            if not compare_dicts(value_a, value_b):
-                return False
-        elif str(value_a) != str(value_b):
-            return False
-
-    return True
 
 def run_module():
     # define available arguments/parameters a user can pass to the module
@@ -197,8 +173,7 @@ def run_module():
         k1000_password=dict(type='str', no_log=True, required=True),
         k1000_totp_secret=dict(type='str', no_log=True, required=True),
         k1000_org=dict(type='str', no_log=False, required=True),
-        asset_id=dict(type='int', no_log=False, required=True),
-        asset_fields=dict(type='dict', required=False, default={}),
+        search_term=dict(type='str', no_log=False, required=True),
     )
 
     # seed the result dict in the object
@@ -206,10 +181,6 @@ def run_module():
         changed=False
     )
 
-    # the AnsibleModule object will be our abstraction working with Ansible
-    # this includes instantiation, a couple of common attr would be the
-    # args/params passed to the execution, as well as if the module
-    # supports check mode
     module = AnsibleModule(
         argument_spec=module_args,
         supports_check_mode=True
@@ -223,41 +194,23 @@ def run_module():
                         module.params['k1000_org']
                         )
 
-    asset = module.params['asset_fields']
-
-    # get asset record
-    endpoint = k1000_logon.k1000_host + '/api/asset/assets/' + str(module.params['asset_id'])
+    # get machine record(s)
+    endpoint = k1000_logon.k1000_host + '/api/inventory/machines?filtering=name co ' + module.params['search_term']
     r = requests.get(
         endpoint, headers=k1000_logon.k1000_headers, cookies=k1000_logon.k1000_jar)
     json_data = r.json()
-    if len(json_data['Assets']) == 0:
-         module.fail_json(msg='No asset found with id ' + str(module.params['asset_id']))
-    asset['id'] = json_data['Assets'][0]['id']
+    if len(json_data['Machines']) == 0:
+         module.fail_json(msg='No machines found with name containing ' + module.params['search_term'])
 
-    # Check if field names exist as keys in the asset
-    for asset_field in module.params['asset_fields']:
-        if asset_field not in json_data['Assets'][0]:
-            module.fail_json(msg='Asset does not contain a field with name ' + asset_field)
+    result['machines'] = []
 
-    # Determine if changes need to be made
-    result['changed'] = not compare_dicts(asset, json_data['Assets'][0])
-
-    # update asset
-    if result['changed'] == True:
-        requestbody = {"Assets": [asset]}
-        k1000_endpoint = k1000_logon.k1000_host + '/api/asset/assets/' + str(module.params['asset_id'])
-        r = requests.put(k1000_endpoint, headers=k1000_logon.k1000_headers, cookies=k1000_logon.k1000_jar, json=requestbody)
-        if r.status_code != 200:
-            module.fail_json(msg='Could not update asset. Full response: ' + str(r.json()))
-
-    # Get detailed asset record
-    endpoint = k1000_logon.k1000_host + '/api/asset/assets/' + str(module.params['asset_id'])
-    r = requests.get(
-        endpoint, headers=k1000_logon.k1000_headers, cookies=k1000_logon.k1000_jar)
-    json_data = r.json()
-    asset = json_data
-
-    result['asset'] = asset
+    # get detailed machine record(s)
+    for machine in json_data['Machines']:
+        endpoint = k1000_logon.k1000_host + '/api/inventory/machines/' + str(machine['Id'])
+        r = requests.get(
+            endpoint, headers=k1000_logon.k1000_headers, cookies=k1000_logon.k1000_jar)
+        json_data = r.json()
+        result['machines'].append(json_data['Machines'][0])
 
     # in the event of a successful module execution, you will want to
     # simple AnsibleModule.exit_json(), passing the key/value results
