@@ -235,9 +235,9 @@ def run_module():
     asset['id'] = json_data['Assets'][0]['id']
 
     # Check if field names exist as keys in the asset
-    for asset_field in module.params['asset_fields']:
-        if asset_field not in json_data['Assets'][0]:
-            module.fail_json(msg='Asset does not contain a field with name ' + asset_field)
+    # for asset_field in module.params['asset_fields']:
+    #     if asset_field not in json_data['Assets'][0]:
+    #         module.fail_json(msg='Asset does not contain a field with name ' + asset_field)
 
     # Determine if changes need to be made
     result['changed'] = not compare_dicts(asset, json_data['Assets'][0])
