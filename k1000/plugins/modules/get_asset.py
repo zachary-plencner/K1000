@@ -195,7 +195,7 @@ def run_module():
                         )
 
     # get asset record(s)
-    endpoint = k1000_logon.k1000_host + '/api/asset/assets?filtering=name co ' + module.params['search_term']
+    endpoint = k1000_logon.k1000_host + '/api/asset/assets?filtering=name eq ' + module.params['search_term']
     r = requests.get(
         endpoint, headers=k1000_logon.k1000_headers, cookies=k1000_logon.k1000_jar)
     json_data = r.json()
