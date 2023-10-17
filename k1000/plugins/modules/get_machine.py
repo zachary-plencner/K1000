@@ -38,10 +38,6 @@ options:
         description: Search string for machine name
         required: true
         type: str
-    search_field:
-        description: Name of field search_term will target
-        required: true
-        type: str
 
 author:
     - Zachary Plencner (@zachary-plencner)
@@ -62,15 +58,30 @@ EXAMPLES = r'''
 
 RETURN = r'''
 machines:
-    description: Information about the machine
+    description: Information about the machine(s)
     type: dict
     returned: always
-    [
-        {machine1},
-        {machine2},
-        {machine3},
-        {machineN}
-    ]
+    sample:
+        machine1:
+            field_1: foo
+            field_2: bar
+            field_3: foo
+            field_N: bar
+        machine2:
+            field_1: foo
+            field_2: bar
+            field_3: foo
+            field_N: bar
+        machine3:
+            field_1: foo
+            field_2: bar
+            field_3: foo
+            field_N: bar
+        machineN:
+            field_1: foo
+            field_2: bar
+            field_3: foo
+            field_N: bar
 '''
 
 from ansible.module_utils.basic import AnsibleModule

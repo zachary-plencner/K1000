@@ -68,15 +68,30 @@ EXAMPLES = r'''
 
 RETURN = r'''
 assets:
-    description: Information about the asset
+    description: Information about the asset(s)
     type: dict
     returned: always
-    [
-        {asset1},
-        {asset2},
-        {asset3},
-        {assetN}
-    ]
+    sample:
+        asset1:
+            field_1: foo
+            field_2: bar
+            field_3: foo
+            field_N: bar
+        asset2:
+            field_1: foo
+            field_2: bar
+            field_3: foo
+            field_N: bar
+        asset3:
+            field_1: foo
+            field_2: bar
+            field_3: foo
+            field_N: bar
+        assetN:
+            field_1: foo
+            field_2: bar
+            field_3: foo
+            field_N: bar
 '''
 
 from ansible.module_utils.basic import AnsibleModule

@@ -10,8 +10,7 @@ short_description: Retreive information about an asset in Quest's K1000 CMDB
 
 version_added: "2.0.0"
 
-description: |
-    Retreive information about an Asset in Quest's K1000 CMDB using the K1000's API as a backend.
+description: Retreive information about an asset in Quest's K1000 CMDB using the K1000's API as a backend.
 
 options:
     k1000_host:
@@ -27,16 +26,20 @@ options:
         required: true
         type: str
     k1000_totp_secret:
-        description: The TOTP secret of the user to connect to the K1000 API
-        required: true
+        description: The TOTP secret of the user to connect to the K1000 API used for MFA check
+        required: false
         type: str
     k1000_org:
-        description: The K1000 ORG to land in after login
+        description: The K1000 Org to land in after login
         required: true
         type: str
     search_term:
-        description: Search string for asset name
+        description: Search string to find asset
         required: true
+        type: str
+    search_field:
+        description: The field search_term will target
+        required: false
         type: str
 
 author:
@@ -58,15 +61,30 @@ EXAMPLES = r'''
 
 RETURN = r'''
 assets:
-    description: Information about the asset
+    description: Information about the asset(s)
     type: dict
     returned: always
-    [
-        {asset1},
-        {asset2},
-        {asset3},
-        {assetN}
-    ]
+    sample:
+        asset1:
+            field_1: foo
+            field_2: bar
+            field_3: foo
+            field_N: bar
+        asset2:
+            field_1: foo
+            field_2: bar
+            field_3: foo
+            field_N: bar
+        asset3:
+            field_1: foo
+            field_2: bar
+            field_3: foo
+            field_N: bar
+        assetN:
+            field_1: foo
+            field_2: bar
+            field_3: foo
+            field_N: bar
 '''
 
 from ansible.module_utils.basic import AnsibleModule

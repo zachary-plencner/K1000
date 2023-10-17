@@ -58,15 +58,30 @@ EXAMPLES = r'''
 
 RETURN = r'''
 users:
-    description: Information about the asset
+    description: Information about the user(s)
     type: dict
     returned: always
-    [
-        {user1},
-        {user2},
-        {user3},
-        {userN}
-    ]
+    sample:
+        user1:
+            field_1: foo
+            field_2: bar
+            field_3: foo
+            field_N: bar
+        user2:
+            field_1: foo
+            field_2: bar
+            field_3: foo
+            field_N: bar
+        user3:
+            field_1: foo
+            field_2: bar
+            field_3: foo
+            field_N: bar
+        userN:
+            field_1: foo
+            field_2: bar
+            field_3: foo
+            field_N: bar
 '''
 
 from ansible.module_utils.basic import AnsibleModule
