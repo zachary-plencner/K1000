@@ -94,15 +94,16 @@ class LogOn:
         self.k1000_2FA_uri = k1000_host + '/ams/shared/api/security/verify_2factor'
         self.k1000_base_url = k1000_host + '/api/v1'
         self.k1000_grant_type = 'password'
-        k1000_2fa_secret = pyotp.TOTP(k1000_totp_secret)
+        if None != k1000_totp_secret:
+            k1000_2fa_secret = pyotp.TOTP(k1000_totp_secret)
 
-        # Obtain Current 2FA Token
-        k1000_2fa_token = k1000_2fa_secret.now()
+            # Obtain Current 2FA Token
+            k1000_2fa_token = k1000_2fa_secret.now()
+            self.k1000_logon_2fa_data = dict(currentCode=k1000_2fa_token)
 
         # Create dictionaries with login data
         self.k1000_logon_data = dict(
             userName=k1000_username, password=k1000_password, organizationName=k1000_org)
-        self.k1000_logon_2fa_data = dict(currentCode=k1000_2fa_token)
 
         # Send POST to K1000 to retrieve authentication token.
         k1000_r = requests.post(self.k1000_logon_uri, json=self.k1000_logon_data)
@@ -117,12 +118,13 @@ class LogOn:
         self.k1000_headers = {'Content-Type': 'application/json', 'Accept': 'application/json',
                         'x-kace-authorization': k1000_r.headers['x-kace-authorization'], 'x-kace-api-version': '8.1'}
 
-        # Verify 2FA Token and Authorize Session
-        k1000_r_2FA = requests.post(
-            self.k1000_2FA_uri, headers=self.k1000_headers, cookies=self.k1000_jar, json=self.k1000_logon_2fa_data)
+        if None != k1000_totp_secret:
+            # Verify 2FA Token and Authorize Session
+            k1000_r_2FA = requests.post(
+                self.k1000_2FA_uri, headers=self.k1000_headers, cookies=self.k1000_jar, json=self.k1000_logon_2fa_data)
 
-        if k1000_r_2FA.status_code != 200:
-            raise Exception("Login failed")
+            if k1000_r_2FA.status_code != 200:
+                raise Exception("Login failed")
 
 
 # API get method
@@ -171,9 +173,10 @@ def run_module():
         k1000_host=dict(type='str', required=True),
         k1000_username=dict(type='str', no_log=True, required=True),
         k1000_password=dict(type='str', no_log=True, required=True),
-        k1000_totp_secret=dict(type='str', no_log=True, required=True),
+        k1000_totp_secret=dict(type='str', no_log=True, required=False),
         k1000_org=dict(type='str', no_log=False, required=True),
         search_term=dict(type='str', no_log=False, required=True),
+        search_field=dict(type='str', no_log=False, required=False),
     )
 
     # seed the result dict in the object
@@ -186,6 +189,9 @@ def run_module():
         supports_check_mode=True
     )
 
+    if None == module.params['k1000_totp_secret']:
+        module.params['k1000_totp_secret'] = None
+
     # Create LogOn session object for rest of module
     k1000_logon = LogOn(module.params['k1000_host'],
                         module.params['k1000_username'],
@@ -194,8 +200,11 @@ def run_module():
                         module.params['k1000_org']
                         )
 
+    if None == module.params['search_field']:
+        module.params['search_field'] = 'name'
+
     # get asset record(s)
-    endpoint = k1000_logon.k1000_host + '/api/asset/assets?filtering=name eq ' + module.params['search_term']
+    endpoint = k1000_logon.k1000_host + '/api/asset/assets?filtering=' + module.params['search_field'] + ' co ' + module.params['search_term']
     r = requests.get(
         endpoint, headers=k1000_logon.k1000_headers, cookies=k1000_logon.k1000_jar)
     json_data = r.json()
