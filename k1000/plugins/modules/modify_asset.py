@@ -277,7 +277,7 @@ def run_module():
     json_data = r.json()
     asset = json_data
 
-    result['asset'] = asset
+    result['asset'] = asset['Assets'][0]
 
     # in the event of a successful module execution, you will want to
     # simple AnsibleModule.exit_json(), passing the key/value results
